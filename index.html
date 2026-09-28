@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>EMSA</title>
+    
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+        }
+        
+        body {
+            background-color: #0f172a; 
+            color: #f8fafc;
+            display: flex;
+            min-height: 100vh;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1100px;
+            background-color: #1e293b;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+            border: 1px solid #334155;
+            display: flex;
+            flex-direction: column; 
+            overflow: hidden;
+        }
+
+        @media (min-width: 768px) {
+            .container {
+                flex-direction: row; 
+            }
+        }
+
+        .left-panel {
+            background-color: rgba(0, 0, 0, 0.2);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            flex: 1; 
+            min-width: 300px;
+            border-bottom: 1px solid #334155;
+        }
+        
+        @media (min-width: 768px) {
+            .left-panel {
+                border-bottom: none;
+                border-right: 1px solid #334155;
+                padding: 32px;
+            }
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+            color: #ffffff;
+            letter-spacing: 1px;
+        }
+        
+        p.subtitle {
+            color: #94a3b8;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+
+        label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #cbd5e1;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        textarea {
+            width: 100%;
+            flex: 1;
+            min-height: 150px;
+            background-color: #0f172a;
+            border: 1px solid #475569;
+            border-radius: 12px;
+            color: #e2e8f0;
+            padding: 16px;
+            font-size: 1rem;
+            line-height: 1.5;
+            resize: none;
+            outline: none;
+            margin-bottom: 16px;
+        }
+
+        textarea:focus {
+            border-color: #3b82f6;
+        }
+
+        .right-panel {
+            padding: 32px 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1.5; 
+            position: relative;
+        }
+
+        .wheel-wrapper {
+            width: 100%;
+            max-width: 450px; 
+            margin: 0 auto;
+            position: relative;
+        }
+
+        /* İşte iPhone'u zorla kare çizdiren o meşhur CSS hilesi */
+        .canvas-container {
+            width: 100%;
+            padding-bottom: 100%; /* Genişlik neyse yüksekliği de o yap */
+            height: 0;
+            position: relative;
+            border-radius: 50%;
+            overflow: hidden;
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.5);
+            background-color: #1e293b; /* Çark yüklenene kadar siyah görünmesin */
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .pointer {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            width: 44px;
+            height: 44px;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4));
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            cursor: pointer;
+            color: white;
+            transition: opacity 0.2s, transform 0.1s;
+        }
+
+        .btn-update {
+            background-color: #334155;
+        }
+
+        .btn-spin {
+            background: linear-gradient(135deg, #2563eb, #7c3aed);
+            margin-top: 32px;
+            box-shadow: 0 10px 20px rgba(37, 99, 235, 0.3);
+            max-width: 300px;
+            font-size: 1.3rem;
+            border-radius: 50px;
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            display: none; 
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            padding: 20px;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: #1e293b;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 450px;
+            width: 100%;
+            border: 2px solid #334155;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+        }
+
+        .modal-title {
+            color: #94a3b8;
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+        }
+
+        .modal-winner-name {
+            font-size: 2.8rem;
+            font-weight: 800;
+            color: #facc15; 
+            margin-bottom: 30px;
+            word-break: break-word;
+            line-height: 1.2;
+        }
+
+        .btn-modal {
+            background-color: #475569;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <div class="left-panel">
+            <div>
+                <h1>EMSA</h1>
+                <p class="subtitle">İsimleri alt alta yazın. Çarkı güncelle butonuna basın ve şansınızı deneyin!</p>
+            </div>
+
+            <label for="namesInput">Katılımcı Listesi:</label>
+            <textarea id="namesInput" placeholder="İsimleri girin..."></textarea>
+
+            <button id="updateBtn" class="btn btn-update">Çarkı Güncelle</button>
+        </div>
+
+        <div class="right-panel">
+            <div class="wheel-wrapper">
+                <svg class="pointer" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 24L22.3923 6H1.6077L12 24Z" fill="#ef4444"/>
+                    <path d="M12 20L19 7H5L12 20Z" fill="#fca5a5"/>
+                </svg>
+                
+                <div class="canvas-container">
+                    <!-- HTML'de boyut vermedik, her şeyi JS ve CSS'e bıraktık -->
+                    <canvas id="wheelCanvas"></canvas>
+                </div>
+            </div>
+
+            <button id="spinBtn" class="btn btn-spin">ÇEVİR!</button>
+        </div>
+    </div>
+
+    <div id="winnerModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-title">KAZANAN</div>
+            <div id="winnerText" class="modal-winner-name">İsim</div>
+            <button id="closeModalBtn" class="btn btn-modal">Tamam (Listeden Çıkar)</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('wheelCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Çarkın iç çözünürlüğünü sabit kılıyoruz (CSS dıştan boyutlandıracak)
+        canvas.width = 1000;
+        canvas.height = 1000;
+
+        const namesInput = document.getElementById('namesInput');
+        const updateBtn = document.getElementById('updateBtn');
+        const spinBtn = document.getElementById('spinBtn');
+        const winnerModal = document.getElementById('winnerModal');
+        const winnerText = document.getElementById('winnerText');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+
+        const colors = [
+            '#ef4444', '#f97316', '#f59e0b', '#84cc16', 
+            '#22c55e', '#06b6d4', '#3b82f6', '#6366f1', 
+            '#a855f7', '#d946ef', '#f43f5e'
+        ];
+
+        let names = [];
+        let currentAngle = 0;
+        let isSpinning = false;
+        
+        // Hile (Gizli) Değişkenleri
+        let riggedName = null;
+        let riggedTriggered = false; 
+
+        function parseNames() {
+            const rawText = namesInput.value.split('\n');
+            names = [];
+            let foundRigThisTime = false;
+
+            for (let i = 0; i < rawText.length; i++) {
+                let text = rawText[i].trim();
+                if (text === '') continue;
+
+                if (text.endsWith('*')) {
+                    text = text.slice(0, -1).trim(); 
+                    if (!riggedTriggered && !foundRigThisTime) {
+                        riggedName = text; 
+                        foundRigThisTime = true;
+                    }
+                }
+                names.push(text);
+            }
+
+            if (names.length === 0) {
+                names = ["Seçenek 1", "Seçenek 2", "Seçenek 3"];
+            } else if (names.length === 1) {
+                names.push("Seçenek 2");
+            }
+
+            if (!foundRigThisTime) {
+                riggedName = null;
+            }
+        }
+
+        function drawWheel() {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = centerX - 10;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const numSlices = names.length;
+            const sliceAngle = (Math.PI * 2) / numSlices;
+
+            for (let i = 0; i < numSlices; i++) {
+                const startAngle = currentAngle + (i * sliceAngle);
+                const endAngle = startAngle + sliceAngle;
+
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+                ctx.closePath();
+                ctx.fillStyle = colors[i % colors.length];
+                ctx.fill();
+
+                ctx.lineWidth = 6;
+                ctx.strokeStyle = '#0f172a';
+                ctx.stroke();
+
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                ctx.rotate(startAngle + (sliceAngle / 2));
+                
+                ctx.textAlign = 'right';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = '#ffffff';
+                // iPhone uyumluluğu için basit font kullanıyoruz
+                ctx.font = 'bold 45px Arial, sans-serif'; 
+                ctx.shadowColor = 'rgba(0,0,0,0.5)';
+                ctx.shadowBlur = 6;
+                
+                let text = names[i];
+                if (text.length > 18) text = text.substring(0, 17) + '...';
+                
+                ctx.fillText(text, radius - 50, 0);
+                ctx.restore();
+            }
+
+            // Göbek Çizimi
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 60, 0, Math.PI * 2);
+            ctx.fillStyle = '#1e293b';
+            ctx.fill();
+            ctx.lineWidth = 10;
+            ctx.strokeStyle = '#475569';
+            ctx.stroke();
+            ctx.closePath();
+        }
+
+        function easeOutQuart(t) {
+            return 1 - (--t) * t * t * t;
+        }
+
+        function spin() {
+            if (isSpinning) return;
+            parseNames(); 
+            drawWheel();
+
+            isSpinning = true;
+            spinBtn.disabled = true;
+            updateBtn.disabled = true;
+
+            const numSlices = names.length;
+            const sliceAngle = (Math.PI * 2) / numSlices;
+            
+            let targetIndex = -1;
+
+            // Hile kontrolü
+            if (!riggedTriggered && riggedName) {
+                targetIndex = names.indexOf(riggedName);
+                if (targetIndex !== -1) {
+                    riggedTriggered = true; 
+                }
+            }
+
+            if (targetIndex === -1) {
+                targetIndex = Math.floor(Math.random() * numSlices);
+            }
+
+            const pointerAngle = (Math.PI * 1.5); 
+            const targetSliceCenter = (targetIndex * sliceAngle) + (sliceAngle / 2);
+            const randomOffset = (Math.random() - 0.5) * (sliceAngle * 0.7);
+            
+            let rotationNeeded = pointerAngle - targetSliceCenter + randomOffset;
+            const extraSpins = 6 + Math.floor(Math.random() * 3); 
+            rotationNeeded += (Math.PI * 2) * extraSpins;
+
+            const startAngle = currentAngle % (Math.PI * 2);
+            const finalAngle = startAngle + rotationNeeded;
+            const duration = 6000; 
+            let startTime = null;
+
+            function animateSpin(timestamp) {
+                if (!startTime) startTime = timestamp;
+                const elapsed = timestamp - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                const easedProgress = easeOutQuart(progress);
+                currentAngle = startAngle + (finalAngle - startAngle) * easedProgress;
+                
+                drawWheel();
+
+                if (progress < 1) {
+                    requestAnimationFrame(animateSpin);
+                } else {
+                    isSpinning = false;
+                    spinBtn.disabled = false;
+                    updateBtn.disabled = false;
+                    
+                    setTimeout(() => {
+                        winnerText.textContent = names[targetIndex];
+                        winnerModal.classList.add('show');
+                    }, 500);
+                }
+            }
+
+            requestAnimationFrame(animateSpin);
+        }
+
+        function removeWinner(winnerName) {
+            const rawLines = namesInput.value.split('\n');
+            const newLines = [];
+            let isRemoved = false;
+
+            for (let i = 0; i < rawLines.length; i++) {
+                const cleanLine = rawLines[i].trim().replace(/\*$/, '').trim();
+                
+                if (cleanLine === winnerName && !isRemoved) {
+                    isRemoved = true; 
+                    continue;
+                }
+                newLines.push(rawLines[i]);
+            }
+
+            namesInput.value = newLines.join('\n');
+            parseNames();
+            drawWheel();
+        }
+
+        updateBtn.addEventListener('click', () => {
+            if (isSpinning) return;
+            parseNames();
+            drawWheel();
+        });
+
+        spinBtn.addEventListener('click', () => {
+            spin();
+        });
+
+        closeModalBtn.addEventListener('click', () => {
+            winnerModal.classList.remove('show');
+            setTimeout(() => {
+                removeWinner(winnerText.textContent);
+            }, 300);
+        });
+
+        // Sayfa yüklendiğinde çarkın kesinlikle çizilmesi için tetikleyiciler
+        parseNames();
+        drawWheel();
+
+        window.addEventListener('load', () => {
+            if (!isSpinning) drawWheel();
+        });
+        
+        // iPhone Webview Garantisi: Hızlı açılışlarda çizimi 3 kere zorla
+        setTimeout(() => { if (!isSpinning) drawWheel(); }, 100);
+        setTimeout(() => { if (!isSpinning) drawWheel(); }, 500);
+        setTimeout(() => { if (!isSpinning) drawWheel(); }, 1000);
+
+    </script>
+</body>
+</html>
